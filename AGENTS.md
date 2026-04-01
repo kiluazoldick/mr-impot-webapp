@@ -4,96 +4,86 @@
 
 ## État du projet
 
-- **Phase actuelle :** Phase 1 - Configuration & Setup
-- **Statut :** ✅ COMPLÉTÉE
+- **Phase actuelle :** Phase 2 - Layout & Navigation
+- **Statut :** En cours
 
 ## Travail effectué
 
-### Phase 1 : Configuration & Setup - COMPLÈTE ✅
+### Phase 1 : Configuration & Setup - ✅ COMPLÈTE
 
-#### Étape 1.1 : Installation des dépendances
+### Phase 2 : Layout & Navigation - EN COURS
 
-- ✅ Installation de lucide-react, axios
+#### Étape 2.1 : Layout racine
 
-#### Étape 1.2 : Configuration Tailwind
+- ✅ app/layout.tsx (métadonnées SEO)
+- ✅ app/globals.css (styles globaux)
 
-- ✅ Configuration des couleurs personnalisées
-- ✅ primary: #3EA7DE, accent: #FF7F36
+#### Étape 2.2 : Hook useSidebar
 
-#### Étape 1.3 : Types TypeScript
+- ✅ hooks/useSidebar.ts (gestion état sidebar avec zustand)
 
-- ✅ types/user.ts
-- ✅ types/document.ts
-- ✅ types/video.ts
-- ✅ types/index.ts
+#### Étape 2.3 : Composant Sidebar
 
-#### Étape 1.4 : Données mock
+- ✅ components/layout/Sidebar.tsx
+  - Navigation principale (6 items)
+  - Catégories (4 items)
+  - Déconnexion
+  - Version
+  - Responsive (mobile/desktop)
 
-- ✅ data/mockData.ts
-  - Catégories (4 principales)
-  - Documents (4 exemples)
-  - Vidéos (2 exemples)
-  - Activités récentes
+#### Étape 2.4 : Composant Header
 
-#### Étape 1.5 : Services API
+- ✅ components/layout/Header.tsx
+  - Menu hamburger mobile
+  - Barre de recherche
+  - Notifications
+  - Menu utilisateur avec dropdown
 
-- ✅ services/api.ts
-  - Configuration Axios
-  - Intercepteurs pour token
-  - Gestion des erreurs 401
+#### Étape 2.5 : Layout Dashboard
 
-#### Étape 1.6 : Composants UI communs (base)
+- ✅ app/(dashboard)/layout.tsx (layout avec sidebar + header)
 
-- ✅ Button.tsx (variants, sizes, loading)
-- ✅ Input.tsx (avec label et erreur)
-- ✅ Card.tsx (padding personnalisable)
-- ✅ LoadingSpinner.tsx
+#### Étape 2.6 : Page Dashboard
 
-#### Étape 1.7 : Composants UI communs (avancés)
-
-- ✅ Modal.tsx (avec overlay et animation)
-- ✅ Avatar.tsx (image, fallback, user icon)
-- ✅ Badge.tsx (variants: default, primary, success, warning, danger)
-- ✅ Dropdown.tsx (avec DropdownItem)
-- ✅ Tabs.tsx (variants: underline, pills)
-
-#### Étape 1.8 : Hooks personnalisés
-
-- ✅ hooks/useDebounce.ts
-- ✅ hooks/useLocalStorage.ts
-- ✅ hooks/useMediaQuery.ts
-- ✅ hooks/useClickOutside.ts
-
-#### Étape 1.9 : Utilitaires
-
-- ✅ utils/constants.ts
-- ✅ utils/formatters.ts (date, file size, text)
-- ✅ utils/validators.ts (email, password, phone)
-- ✅ utils/dateUtils.ts (timeAgo, isToday, isThisWeek)
+- ✅ app/(dashboard)/page.tsx
+  - Statistiques (4 cards)
+  - Documents récents
+  - Activité récente
+  - Accès rapide catégories
 
 ## Structure actuelle du projet
 
 ```
 webapp/
 ├── app/
+│   ├── (dashboard)/
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── layout.tsx
+│   ├── globals.css
+│   └── page.tsx (Landing - à créer)
 ├── components/
-│   └── common/
-│       ├── Button.tsx
-│       ├── Input.tsx
-│       ├── Card.tsx
-│       ├── LoadingSpinner.tsx
-│       ├── Modal.tsx
-│       ├── Avatar.tsx
-│       ├── Badge.tsx
-│       ├── Dropdown.tsx
-│       └── Tabs.tsx
-├── data/
-│   └── mockData.ts
+│   ├── common/
+│   │   ├── Button.tsx
+│   │   ├── Input.tsx
+│   │   ├── Card.tsx
+│   │   ├── LoadingSpinner.tsx
+│   │   ├── Modal.tsx
+│   │   ├── Avatar.tsx
+│   │   ├── Badge.tsx
+│   │   ├── Dropdown.tsx
+│   │   └── Tabs.tsx
+│   └── layout/
+│       ├── Sidebar.tsx
+│       └── Header.tsx
 ├── hooks/
 │   ├── useDebounce.ts
 │   ├── useLocalStorage.ts
 │   ├── useMediaQuery.ts
-│   └── useClickOutside.ts
+│   ├── useClickOutside.ts
+│   └── useSidebar.ts
+├── data/
+│   └── mockData.ts
 ├── services/
 │   └── api.ts
 ├── types/
@@ -101,48 +91,36 @@ webapp/
 │   ├── user.ts
 │   ├── document.ts
 │   └── video.ts
-├── utils/
-│   ├── constants.ts
-│   ├── formatters.ts
-│   ├── validators.ts
-│   └── dateUtils.ts
-└── tailwind.config.js
+└── utils/
+    ├── constants.ts
+    ├── formatters.ts
+    ├── validators.ts
+    └── dateUtils.ts
 ```
-
-## Technologies utilisées
-
-- Next.js (App Router)
-- Tailwind CSS
-- TypeScript
-- Lucide React (tous les icônes)
-- Axios
 
 ## Prochaines étapes
 
-### Phase 2 : Layout & Navigation
+### Phase 2 (suite)
 
-- Étape 2.1 : Layout racine avec métadonnées
-- Étape 2.2 : Layout dashboard avec Sidebar
-- Étape 2.3 : Composant Sidebar (responsive)
-- Étape 2.4 : Composant Header (avec menu mobile)
-- Étape 2.5 : Hook useSidebar
+- Étape 2.8 : Landing Page (app/page.tsx)
+- Étape 2.9 : Pages d'authentification (login, register)
 
-## Règles de développement
+### Phase 3
 
-- ✅ Utilisation de Lucide React pour tous les icônes (pas d'emojis)
-- ✅ Tous les composants en TypeScript
-- ✅ Style uniquement avec Tailwind CSS
-- ✅ Composants réutilisables et modulaires
-- ✅ Données mock prêtes pour développement frontend
+- Page Documents
+- Page Vidéos
+- Page Recherche
 
-## Notes importantes
+## Composants créés aujourd'hui
 
-- Les couleurs sont définies dans tailwind.config.js
-- Le token d'authentification est stocké dans localStorage
-- Les intercepteurs Axios gèrent automatiquement les erreurs 401
-- Tous les composants UI sont prêts pour être utilisés dans les pages
+- Sidebar (avec navigation et catégories)
+- Header (avec recherche et menu utilisateur)
+- Layout Dashboard
+- Page Dashboard avec statistiques et activités
 
-```
+## Notes techniques
 
----
-```
+- Installation de zustand pour la gestion d'état de la sidebar
+- Utilisation de useMediaQuery pour la détection mobile
+- Dropdown personnalisé pour le menu utilisateur
+- Icônes Lucide React utilisées partout
