@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -18,7 +18,7 @@ import Button from "@/components/common/Button";
 import Badge from "@/components/common/Badge";
 import { documents, categories } from "@/data/mockData";
 
-export default function DocumentsPage() {
+function DocumentsContent() {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get("category");
 
@@ -27,7 +27,6 @@ export default function DocumentsPage() {
   const [selectedFormat, setSelectedFormat] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Filtrer les documents
   const filteredDocuments = documents.filter((doc) => {
     const matchesSearch =
       searchQuery === "" ||
@@ -57,7 +56,6 @@ export default function DocumentsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Documents</h1>
         <p className="text-gray-500 mt-1">
@@ -65,10 +63,8 @@ export default function DocumentsPage() {
         </p>
       </div>
 
-      {/* Barre de recherche et filtres */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search bar */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -79,8 +75,6 @@ export default function DocumentsPage() {
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#3DA7E3] focus:ring-1 focus:ring-[#3DA7E3] transition-all"
             />
           </div>
-
-          {/* Filter button mobile */}
           <Button
             variant="outline"
             size="md"
@@ -92,14 +86,11 @@ export default function DocumentsPage() {
           </Button>
         </div>
 
-        {/* Filters - Desktop */}
         <div className="hidden sm:flex flex-wrap items-center gap-3">
           <span className="text-sm text-gray-500 flex items-center gap-1">
             <Filter className="w-4 h-4" />
             Filtres :
           </span>
-
-          {/* Category filter */}
           <div className="relative">
             <select
               value={selectedCategory}
@@ -115,8 +106,6 @@ export default function DocumentsPage() {
             </select>
             <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
-
-          {/* Format filter */}
           <div className="relative">
             <select
               value={selectedFormat}
@@ -132,8 +121,6 @@ export default function DocumentsPage() {
             </select>
             <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           </div>
-
-          {/* Clear filters */}
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
@@ -145,7 +132,6 @@ export default function DocumentsPage() {
           )}
         </div>
 
-        {/* Filters - Mobile */}
         {showFilters && (
           <Card className="border border-gray-200 p-4 sm:hidden">
             <div className="space-y-3">
@@ -173,7 +159,7 @@ export default function DocumentsPage() {
                 <select
                   value={selectedFormat}
                   onChange={(e) => setSelectedFormat(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm  text-black"
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-black"
                 >
                   <option value="">Tous les formats</option>
                   {formats.map((format) => (
@@ -198,16 +184,13 @@ export default function DocumentsPage() {
         )}
       </div>
 
-      {/* Résultats */}
       <div className="space-y-4">
-        {/* Résultats count */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-500">
             {filteredDocuments.length} document(s) trouvé(s)
           </p>
         </div>
 
-        {/* Liste des documents */}
         {filteredDocuments.length === 0 ? (
           <Card className="border border-gray-200 text-center py-12">
             <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
@@ -294,5 +277,19 @@ export default function DocumentsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function DocumentsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3DA7E3]"></div>
+        </div>
+      }
+    >
+      <DocumentsContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import {
   Video,
@@ -11,7 +11,6 @@ import {
   Clock,
   Eye,
   Heart,
-  ChevronDown,
 } from "lucide-react";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
@@ -26,12 +25,11 @@ const videoCategories = [
   { id: "Jurisprudence", name: "Jurisprudence", color: "#3DA7E3" },
 ];
 
-export default function VideosPage() {
+function VideosContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
 
-  // Filtrer les vidéos
   const filteredVideos = videos.filter((video) => {
     const matchesSearch =
       searchQuery === "" ||
@@ -53,7 +51,6 @@ export default function VideosPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Vidéos éducatives</h1>
         <p className="text-gray-500 mt-1">
@@ -61,10 +58,8 @@ export default function VideosPage() {
         </p>
       </div>
 
-      {/* Barre de recherche et filtres */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search bar */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -75,8 +70,6 @@ export default function VideosPage() {
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#3DA7E3] focus:ring-1 focus:ring-[#3DA7E3] transition-all"
             />
           </div>
-
-          {/* Filter button mobile */}
           <Button
             variant="outline"
             size="md"
@@ -88,7 +81,6 @@ export default function VideosPage() {
           </Button>
         </div>
 
-        {/* Filters - Desktop */}
         <div className="hidden sm:flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-gray-500 flex items-center gap-1">
@@ -111,8 +103,6 @@ export default function VideosPage() {
               </button>
             ))}
           </div>
-
-          {/* Clear filters */}
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
@@ -124,7 +114,6 @@ export default function VideosPage() {
           )}
         </div>
 
-        {/* Filters - Mobile */}
         {showFilters && (
           <Card className="border border-gray-200 p-4 sm:hidden">
             <div className="space-y-3">
@@ -163,16 +152,13 @@ export default function VideosPage() {
         )}
       </div>
 
-      {/* Résultats */}
       <div className="space-y-4">
-        {/* Résultats count */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-500">
             {filteredVideos.length} vidéo(s) trouvée(s)
           </p>
         </div>
 
-        {/* Grille des vidéos */}
         {filteredVideos.length === 0 ? (
           <Card className="border border-gray-200 text-center py-12">
             <Video className="w-12 h-12 text-gray-300 mx-auto mb-3" />
@@ -200,7 +186,6 @@ export default function VideosPage() {
                 className="group"
               >
                 <Card className="border border-gray-200 hover:border-[#3DA7E3] hover:shadow-lg transition-all overflow-hidden p-0 h-full flex flex-col">
-                  {/* Miniature vidéo */}
                   <div className="relative bg-gray-900 aspect-video">
                     <img
                       src={
@@ -226,7 +211,6 @@ export default function VideosPage() {
                     </div>
                   </div>
 
-                  {/* Infos vidéo */}
                   <div className="p-4 flex-1 flex flex-col">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-semibold text-gray-900 group-hover:text-[#3DA7E3] transition-colors line-clamp-2 flex-1">
@@ -262,5 +246,19 @@ export default function VideosPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function VideosPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3DA7E3]"></div>
+        </div>
+      }
+    >
+      <VideosContent />
+    </Suspense>
   );
 }

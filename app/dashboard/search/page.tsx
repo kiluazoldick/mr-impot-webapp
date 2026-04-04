@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -22,7 +22,6 @@ import Button from "@/components/common/Button";
 import Badge from "@/components/common/Badge";
 import { documents, videos } from "@/data/mockData";
 
-// Correction du type : utiliser "document" et "video" (singulier)
 type ResultType = "all" | "document" | "video";
 
 interface SearchResult {
@@ -38,7 +37,7 @@ interface SearchResult {
   downloads?: number;
 }
 
-export default function SearchPage() {
+function SearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
@@ -48,15 +47,10 @@ export default function SearchPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-
   const [results, setResults] = useState<SearchResult[]>([]);
 
   const performSearch = async (query: string) => {
     setIsLoading(true);
-
-    // TODO: Remplacer par appel API Laravel
-    // const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-    // const data = await response.json();
 
     setTimeout(() => {
       const mockResults: SearchResult[] = [
@@ -119,7 +113,6 @@ export default function SearchPage() {
     router.push("/dashboard/search");
   };
 
-  // Correction de la comparaison : activeTab est maintenant "document" ou "video"
   const filteredResults = results.filter((result) => {
     if (activeTab !== "all" && result.type !== activeTab) return false;
     if (selectedCategory && result.category !== selectedCategory) return false;
@@ -144,7 +137,6 @@ export default function SearchPage() {
         </p>
       </div>
 
-      {/* Barre de recherche principale */}
       <form onSubmit={handleSearch} className="w-full">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
@@ -178,11 +170,9 @@ export default function SearchPage() {
         </div>
       </form>
 
-      {/* Résultats */}
       {(results.length > 0 || isLoading || initialQuery) && (
         <div className="space-y-4">
           <div className="flex flex-col gap-4">
-            {/* Onglets - Correction des valeurs */}
             <div className="flex items-center gap-1 border-b border-gray-200 overflow-x-auto">
               <button
                 onClick={() => setActiveTab("all")}
@@ -219,14 +209,12 @@ export default function SearchPage() {
               </button>
             </div>
 
-            {/* Filtres - Desktop */}
             <div className="hidden sm:flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="text-sm text-gray-500 flex items-center gap-1">
                   <Filter className="w-4 h-4" />
                   Filtrer par :
                 </span>
-
                 {uniqueCategories.length > 0 && (
                   <div className="relative">
                     <select
@@ -244,7 +232,6 @@ export default function SearchPage() {
                     <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   </div>
                 )}
-
                 {hasActiveFilters && (
                   <button
                     onClick={clearFilters}
@@ -257,7 +244,6 @@ export default function SearchPage() {
               </div>
             </div>
 
-            {/* Filtres - Mobile */}
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="sm:hidden flex items-center justify-center gap-2 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg"
@@ -301,7 +287,6 @@ export default function SearchPage() {
             )}
           </div>
 
-          {/* Résultats count */}
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">
               {filteredResults.length} résultat(s) trouvé(s)
@@ -314,14 +299,12 @@ export default function SearchPage() {
             </p>
           </div>
 
-          {/* Loading state */}
           {isLoading && (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3DA7E3]"></div>
             </div>
           )}
 
-          {/* Liste des résultats */}
           {!isLoading && filteredResults.length === 0 && (
             <Card className="border border-gray-200 text-center py-12">
               <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
@@ -461,7 +444,6 @@ export default function SearchPage() {
         </div>
       )}
 
-      {/* État initial */}
       {!initialQuery && results.length === 0 && !isLoading && (
         <div className="flex flex-col items-center justify-center py-16">
           <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
@@ -499,5 +481,19 @@ export default function SearchPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3DA7E3]"></div>
+        </div>
+      }
+    >
+      <SearchContent />
+    </Suspense>
   );
 }
