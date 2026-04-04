@@ -17,8 +17,20 @@ import Button from "@/components/common/Button";
 import Badge from "@/components/common/Badge";
 import { documents, videos, categories } from "@/data/mockData";
 
+// Type pour les favoris (union de Document et Video)
+type FavoriteItem = (typeof documents)[0] | (typeof videos)[0];
+
 export default function DashboardPage() {
-  const [favorites] = useState([documents[0], documents[2], videos[0]]);
+  const [favorites] = useState<FavoriteItem[]>([
+    documents[0],
+    documents[2],
+    videos[0],
+  ]);
+
+  // Fonction pour vérifier si un item est un document
+  const isDocument = (item: FavoriteItem): item is (typeof documents)[0] => {
+    return "format" in item;
+  };
 
   return (
     <div className="space-y-8">
@@ -143,52 +155,55 @@ export default function DashboardPage() {
           </Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {favorites.map((item, index) => (
-            <Link
-              key={index}
-              href={
-                "title" in item
-                  ? `/dashboard/documents/${item.id}`
-                  : `/dashboard/videos/${item.id}`
-              }
-              className="group"
-            >
-              <Card className="border border-gray-200 hover:border-[#F49600] hover:shadow-md transition-all h-full">
-                <div className="p-4">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div
-                      className="p-2 rounded-lg"
-                      style={{ backgroundColor: "#F4960010" }}
-                    >
-                      {"format" in item ? (
-                        <FileText
-                          className="w-5 h-5"
-                          style={{ color: "#F49600" }}
-                        />
-                      ) : (
-                        <Video
-                          className="w-5 h-5"
-                          style={{ color: "#F49600" }}
-                        />
-                      )}
+          {favorites.map((item, index) => {
+            const isDoc = isDocument(item);
+            return (
+              <Link
+                key={item.id || index}
+                href={
+                  isDoc
+                    ? `/dashboard/documents/${item.id}`
+                    : `/dashboard/videos/${item.id}`
+                }
+                className="group"
+              >
+                <Card className="border border-gray-200 hover:border-[#F49600] hover:shadow-md transition-all h-full">
+                  <div className="p-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div
+                        className="p-2 rounded-lg"
+                        style={{ backgroundColor: "#F4960010" }}
+                      >
+                        {isDoc ? (
+                          <FileText
+                            className="w-5 h-5"
+                            style={{ color: "#F49600" }}
+                          />
+                        ) : (
+                          <Video
+                            className="w-5 h-5"
+                            style={{ color: "#F49600" }}
+                          />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">
+                          {item.title}
+                        </h3>
+                        <p className="text-xs text-gray-400">
+                          {isDoc ? item.category.name : item.category}
+                        </p>
+                      </div>
+                      <Heart className="w-4 h-4 fill-[#F49600] text-[#F49600]" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">
-                        {item.title}
-                      </h3>
-                      <p className="text-xs text-gray-400">
-                        {"format" in item ? item.category.name : item.category}
-                      </p>
-                    </div>
-                    <Heart className="w-4 h-4 fill-[#F49600] text-[#F49600]" />
+                    <p className="text-sm text-gray-500 line-clamp-2">
+                      {item.description}
+                    </p>
                   </div>
-                  <p className="text-sm text-gray-500 line-clamp-2">
-                    {item.description}
-                  </p>
-                </div>
-              </Card>
-            </Link>
-          ))}
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
