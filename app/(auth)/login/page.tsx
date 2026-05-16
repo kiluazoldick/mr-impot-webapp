@@ -6,6 +6,9 @@ import { useState } from "react";
 import { Eye, EyeOff, Lock, Mail, Shield, CheckCircle } from "lucide-react";
 import Button from "@/components/common/Button";
 import { useRouter } from "next/navigation";
+import { authApi } from "@/services/api";
+import toast from "react-hot-toast";
+import { supabase } from "@/lib/supabase";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,49 +16,59 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // logique de connexion
-    console.log({ email, password, rememberMe });
-    setTimeout(() => {
-      setIsLoading(false);
-      // Redirection vers dashboard après connexion
+    setError("");
+
+    try {
+      const result = await authApi.login(email, password);
+
+      // Stocker le token
+      if (result?.session?.access_token) {
+        localStorage.setItem("sb-access-token", result.session.access_token);
+      }
+      localStorage.setItem("user-email", email);
+
+      toast.success("Connexion réussie !");
       router.push("/dashboard");
-    }, 1000);
+    } catch (err: any) {
+      const message = err.message || "Email ou mot de passe incorrect";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleGoogleLogin = () => {
-    setIsLoading(true);
-    console.log("Login with Google");
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push("/dashboard");
-    }, 1000);
+  const handleGoogleLogin = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+        },
+      });
+      if (error) {
+        toast.error("Erreur connexion Google");
+        return;
+      }
+      // La redirection est automatique vers Google
+    } catch (err: any) {
+      toast.error("Erreur connexion Google");
+    }
   };
 
   return (
     <div className="min-h-screen bg-white flex">
-      {/* ── Panneau gauche branding ── */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-gray-50 border-r border-gray-200">
-        {/* Logo */}
         <Link href="/" className="flex items-center space-x-3 group">
-          <img
-            src="/logo.png"
-            alt="Mr Impôt"
-            className="h-12 w-auto"
-            onError={(e) => {
-              e.currentTarget.src = "https://via.placeholder.com/48x48?text=MI";
-            }}
-          />
-          <span className="text-2xl font-bold text-[#3DA7E3] tracking-tight">
-            M. Impôt
-          </span>
+          <img src="/logo.png" alt="Mr Impôt" className="h-12 w-auto" />
+          <span className="text-2xl font-bold text-[#3DA7E3]">M. Impôt</span>
         </Link>
-
-        {/* Titre + features */}
         <div>
           <h2 className="text-3xl font-bold text-gray-900 leading-tight mb-8">
             Votre espace juridique
@@ -84,8 +97,6 @@ export default function Login() {
             ))}
           </div>
         </div>
-
-        {/* Stats */}
         <div className="flex flex-wrap gap-8 pt-8 border-t border-gray-200">
           {[
             { value: "10k+", label: "Documents" },
@@ -100,29 +111,18 @@ export default function Login() {
         </div>
       </div>
 
-      {/* ── Panneau droit formulaire ── */}
       <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:px-16">
         <div className="w-full max-w-md mx-auto">
-          {/* Mobile logo */}
           <div className="lg:hidden mb-8 text-center">
             <Link
               href="/"
               className="flex items-center justify-center space-x-3"
             >
-              <img
-                src="/logo.png"
-                alt="Mr Impôt"
-                className="h-15 w-auto"
-                onError={(e) => {
-                  e.currentTarget.src =
-                    "https://via.placeholder.com/40x40?text=MI";
-                }}
-              />
+              <img src="/logo.png" alt="Mr Impôt" className="h-15 w-auto" />
               <span className="text-xl font-bold text-[#3DA7E3]">Mr Impôt</span>
             </Link>
           </div>
 
-          {/* Card */}
           <div className="bg-white rounded-xl border border-gray-200 p-8">
             <div className="text-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900">Connexion</h1>
@@ -131,18 +131,18 @@ export default function Login() {
               </p>
             </div>
 
-            {/* Bouton Google */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
             <button
               onClick={handleGoogleLogin}
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 disabled:opacity-50"
             >
-              <svg
-                className="w-5 h-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                   fill="#4285F4"
@@ -163,7 +163,6 @@ export default function Login() {
               <span>Continuer avec Google</span>
             </button>
 
-            {/* Séparateur */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200"></div>
@@ -174,7 +173,6 @@ export default function Login() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Adresse e-mail
@@ -192,7 +190,6 @@ export default function Login() {
                 </div>
               </div>
 
-              {/* Password */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-sm font-medium text-gray-700">
@@ -229,7 +226,6 @@ export default function Login() {
                 </div>
               </div>
 
-              {/* Remember me */}
               <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -253,19 +249,6 @@ export default function Login() {
               </Button>
             </form>
 
-            {/* Séparateur pour mobile */}
-            <div className="relative my-6 lg:hidden">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">
-                  Nouveau sur Mr Impôt ?
-                </span>
-              </div>
-            </div>
-
-            {/* Lien inscription (desktop) */}
             <div className="hidden lg:block mt-4 text-center">
               <p className="text-sm text-gray-500">
                 Pas encore de compte ?{" "}
@@ -278,7 +261,6 @@ export default function Login() {
               </p>
             </div>
 
-            {/* Lien inscription (mobile) */}
             <div className="lg:hidden">
               <Link href="/register">
                 <Button
@@ -291,7 +273,6 @@ export default function Login() {
               </Link>
             </div>
 
-            {/* Sécurité */}
             <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-center gap-2 text-xs text-gray-400">
               <Shield className="w-3.5 h-3.5 text-[#3DA7E3]" />
               <span>Connexion sécurisée — chiffrement SSL</span>

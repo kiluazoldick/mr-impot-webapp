@@ -9,12 +9,14 @@ import {
   Lock,
   Mail,
   User,
-  Phone,
   Shield,
   CheckCircle2,
 } from "lucide-react";
 import Button from "@/components/common/Button";
 import { useRouter } from "next/navigation";
+import { authApi } from "@/services/api";
+import toast from "react-hot-toast";
+import { supabase } from "@/lib/supabase";
 
 const steps = ["Identité", "Accès", "Confirmation"];
 
@@ -23,10 +25,10 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
-    phone: "",
     email: "",
     password: "",
     confirm: "",
@@ -40,60 +42,77 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    console.log("Inscription:", form);
-    setTimeout(() => {
+    setError("");
+
+    try {
+      const result = await authApi.register(
+        form.email,
+        form.password,
+        form.firstName,
+        form.lastName,
+      );
+
+      localStorage.setItem("user-email", form.email);
+
+      if (result?.session?.access_token) {
+        localStorage.setItem("sb-access-token", result.session.access_token);
+        toast.success("Compte créé avec succès !");
+        router.push("/dashboard");
+      } else {
+        toast.success("Compte créé ! Vérifiez votre email pour confirmer.", {
+          duration: 6000,
+        });
+        router.push("/login");
+      }
+    } catch (err: any) {
+      const message = err.message || "Erreur lors de l'inscription";
+      setError(message);
+      toast.error(message);
+    } finally {
       setIsLoading(false);
-      router.push("/dashboard");
-    }, 1000);
+    }
   };
 
-  const handleGoogleRegister = () => {
-    setIsLoading(true);
-    console.log("Register with Google");
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push("/dashboard");
-    }, 1000);
+  const handleGoogleRegister = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+        },
+      });
+      if (error) {
+        toast.error("Erreur inscription Google");
+        return;
+      }
+    } catch (err: any) {
+      toast.error("Erreur inscription Google");
+    }
   };
 
   const isStepValid = () => {
-    if (step === 0) {
+    if (step === 0)
       return form.firstName.trim() !== "" && form.lastName.trim() !== "";
-    }
-    if (step === 1) {
+    if (step === 1)
       return (
         form.email.trim() !== "" &&
         form.password.length >= 8 &&
         form.password === form.confirm
       );
-    }
-    if (step === 2) {
-      return form.acceptTerms === true;
-    }
+    if (step === 2) return form.acceptTerms === true;
     return false;
   };
 
   return (
     <div className="min-h-screen bg-white flex">
-      {/* ── Panneau gauche branding ── */}
       <div className="hidden lg:flex lg:w-2/5 flex-col justify-between p-12 bg-gray-50 border-r border-gray-200">
         <Link href="/" className="flex items-center space-x-3 group">
-          <img
-            src="/logo.png"
-            alt="Mr Impôt"
-            className="h-12 w-auto"
-            onError={(e) => {
-              e.currentTarget.src = "https://via.placeholder.com/48x48?text=MI";
-            }}
-          />
-          <span className="text-2xl font-bold text-[#3DA7E3] tracking-tight">
-            M. Impôt
-          </span>
+          <img src="/logo.png" alt="Mr Impôt" className="h-12 w-auto" />
+          <span className="text-2xl font-bold text-[#3DA7E3]">M. Impôt</span>
         </Link>
-
         <div>
           <h2 className="text-3xl font-bold text-gray-900 leading-tight mb-8">
-            Rejoignez
+            Rejoignez{" "}
             <span className="block text-[#3DA7E3] mt-1">
               50 000+ utilisateurs
             </span>
@@ -121,7 +140,6 @@ export default function Register() {
             ))}
           </div>
         </div>
-
         <div className="flex flex-wrap gap-8 pt-8 border-t border-gray-200">
           {[
             { value: "10k+", label: "Documents" },
@@ -136,29 +154,18 @@ export default function Register() {
         </div>
       </div>
 
-      {/* ── Panneau droit formulaire ── */}
       <div className="flex-1 flex flex-col justify-center px-6 py-12 lg:px-16 overflow-y-auto">
         <div className="w-full max-w-lg mx-auto">
-          {/* Mobile logo */}
           <div className="lg:hidden mb-8 text-center">
             <Link
               href="/"
               className="flex items-center justify-center space-x-3"
             >
-              <img
-                src="/logo.png"
-                alt="Mr Impôt"
-                className="h-15 w-auto"
-                onError={(e) => {
-                  e.currentTarget.src =
-                    "https://via.placeholder.com/40x40?text=MI";
-                }}
-              />
+              <img src="/logo.png" alt="Mr Impôt" className="h-15 w-auto" />
               <span className="text-xl font-bold text-[#3DA7E3]">Mr Impôt</span>
             </Link>
           </div>
 
-          {/* Card */}
           <div className="bg-white rounded-xl border border-gray-200 p-8">
             <div className="text-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900">
@@ -175,18 +182,18 @@ export default function Register() {
               </p>
             </div>
 
-            {/* Bouton Google */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
             <button
               onClick={handleGoogleRegister}
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 disabled:opacity-50"
             >
-              <svg
-                className="w-5 h-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                   fill="#4285F4"
@@ -207,7 +214,6 @@ export default function Register() {
               <span>S&apos;inscrire avec Google</span>
             </button>
 
-            {/* Séparateur */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200"></div>
@@ -217,7 +223,6 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Stepper */}
             <div className="flex items-center gap-0 mb-8">
               {steps.map((label, i) => (
                 <div
@@ -226,28 +231,19 @@ export default function Register() {
                 >
                   <div className="flex flex-col items-center gap-1">
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border-2 transition-all
-                      ${
-                        i < step
-                          ? "bg-[#3DA7E3] border-[#3DA7E3] text-white"
-                          : i === step
-                            ? "bg-white border-[#3DA7E3] text-[#3DA7E3]"
-                            : "bg-white border-gray-300 text-gray-400"
-                      }`}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border-2 transition-all ${i < step ? "bg-[#3DA7E3] border-[#3DA7E3] text-white" : i === step ? "bg-white border-[#3DA7E3] text-[#3DA7E3]" : "bg-white border-gray-300 text-gray-400"}`}
                     >
                       {i < step ? "✓" : i + 1}
                     </div>
                     <span
-                      className={`text-[10px] font-medium whitespace-nowrap
-                      ${i === step ? "text-[#3DA7E3]" : "text-gray-400"}`}
+                      className={`text-[10px] font-medium whitespace-nowrap ${i === step ? "text-[#3DA7E3]" : "text-gray-400"}`}
                     >
                       {label}
                     </span>
                   </div>
                   {i < steps.length - 1 && (
                     <div
-                      className={`flex-1 h-0.5 mx-2 mb-4 rounded-full transition-colors
-                      ${i < step ? "bg-[#3DA7E3]" : "bg-gray-200"}`}
+                      className={`flex-1 h-0.5 mx-2 mb-4 rounded-full transition-colors ${i < step ? "bg-[#3DA7E3]" : "bg-gray-200"}`}
                     />
                   )}
                 </div>
@@ -255,62 +251,43 @@ export default function Register() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Étape 0 — Identité */}
               {step === 0 && (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                        Prénom
-                      </label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          type="text"
-                          required
-                          value={form.firstName}
-                          onChange={(e) => set("firstName", e.target.value)}
-                          placeholder="Pierre"
-                          className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#3DA7E3] focus:ring-1 focus:ring-[#3DA7E3] transition-all"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                        Nom
-                      </label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          type="text"
-                          required
-                          value={form.lastName}
-                          onChange={(e) => set("lastName", e.target.value)}
-                          placeholder="Akoa"
-                          className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#3DA7E3] focus:ring-1 focus:ring-[#3DA7E3] transition-all"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Téléphone (optionnel)
+                      Prénom
                     </label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
-                        type="tel"
-                        value={form.phone}
-                        onChange={(e) => set("phone", e.target.value)}
-                        placeholder="+237 6 99 99 99 99"
+                        type="text"
+                        required
+                        value={form.firstName}
+                        onChange={(e) => set("firstName", e.target.value)}
+                        placeholder="Pierre"
                         className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#3DA7E3] focus:ring-1 focus:ring-[#3DA7E3] transition-all"
                       />
                     </div>
                   </div>
-                </>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Nom
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        required
+                        value={form.lastName}
+                        onChange={(e) => set("lastName", e.target.value)}
+                        placeholder="Akoa"
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#3DA7E3] focus:ring-1 focus:ring-[#3DA7E3] transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
               )}
 
-              {/* Étape 1 — Accès */}
               {step === 1 && (
                 <>
                   <div>
@@ -396,7 +373,6 @@ export default function Register() {
                 </>
               )}
 
-              {/* Étape 2 — Confirmation */}
               {step === 2 && (
                 <>
                   <div className="bg-gray-50 rounded-lg border border-gray-200 p-5 space-y-3">
@@ -417,12 +393,6 @@ export default function Register() {
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Téléphone</span>
-                        <span className="text-gray-900 font-medium">
-                          {form.phone || "—"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
                         <span className="text-gray-500">E-mail</span>
                         <span className="text-gray-900 font-medium">
                           {form.email}
@@ -430,7 +400,6 @@ export default function Register() {
                       </div>
                     </div>
                   </div>
-
                   <div className="flex items-start gap-3">
                     <input
                       type="checkbox"
@@ -440,7 +409,6 @@ export default function Register() {
                       onChange={(e) => set("acceptTerms", e.target.checked)}
                       className="w-4 h-4 mt-0.5 rounded border-gray-300 text-[#3DA7E3] focus:ring-[#3DA7E3]"
                     />
-
                     <label
                       htmlFor="terms"
                       className="text-xs text-gray-500 leading-relaxed cursor-pointer"
@@ -465,7 +433,6 @@ export default function Register() {
                 </>
               )}
 
-              {/* Navigation */}
               <div className="flex gap-3 pt-4">
                 {step > 0 && (
                   <Button
@@ -503,7 +470,6 @@ export default function Register() {
               </div>
             </form>
 
-            {/* Sécurité */}
             <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-center gap-2 text-xs text-gray-400">
               <Shield className="w-3.5 h-3.5 text-[#3DA7E3]" />
               <span>Inscription sécurisée — chiffrement SSL</span>

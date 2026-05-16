@@ -1,36 +1,90 @@
-import axios from "axios";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://mr-impot-backend.vercel.app/api";
 
-const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api",
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
+interface RequestOptions {
+  headers?: Record<string, string>;
+  isFormData?: boolean;
+}
 
-// Interceptor pour ajouter le token d'authentification
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  },
-);
+async function request<T>(
+  endpoint: string,
+  options?: RequestInit & RequestOptions,
+): Promise<T> {
+  const { isFormData, ...fetchOptions } = options || {};
 
-// Interceptor pour gérer les erreurs
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  },
-);
+  const headers: Record<string, string> = {
+    ...(fetchOptions.headers as Record<string, string>),
+  };
 
-export default api;
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  // Ajouter le token depuis localStorage
+  const token = localStorage.getItem("sb-access-token");
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...fetchOptions,
+    headers,
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ error: "Erreur réseau" }));
+    throw new Error(error.error || `Erreur ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export const authApi = {
+  login: (email: string, password: string) =>
+    request<{
+      user: any;
+      role: string;
+      profile: any;
+      session: { access_token: string } | null;
+    }>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
+
+  register: (
+    email: string,
+    password: string,
+    first_name?: string,
+    last_name?: string,
+  ) =>
+    request<{ user: any; session: { access_token: string } | null }>(
+      "/auth/register",
+      {
+        method: "POST",
+        body: JSON.stringify({ email, password, first_name, last_name }),
+      },
+    ),
+
+  me: () => request<{ user: any; profile: any }>("/auth/me"),
+};
+
+export const publicApi = {
+  getCategories: () => request("/public/categories"),
+  getDocuments: (params?: Record<string, string>) => {
+    const query = params ? "?" + new URLSearchParams(params).toString() : "";
+    return request(`/public/documents${query}`);
+  },
+  getDocument: (id: string) => request(`/public/documents/${id}`),
+  downloadDocument: (id: string) =>
+    request(`/public/documents/${id}?download=true`),
+  getVideos: (params?: Record<string, string>) => {
+    const query = params ? "?" + new URLSearchParams(params).toString() : "";
+    return request(`/public/videos${query}`);
+  },
+  getVideo: (id: string) => request(`/public/videos/${id}`),
+  searchDocuments: (q: string, mode = "fulltext") =>
+    request(`/public/search?q=${encodeURIComponent(q)}&mode=${mode}`),
+};

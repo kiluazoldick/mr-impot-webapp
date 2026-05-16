@@ -4,15 +4,23 @@ import { Menu, Bell, Search, ChevronDown } from "lucide-react";
 import { useSidebar } from "@/hooks/useSidebar";
 import Avatar from "@/components/common/Avatar";
 import Dropdown, { DropdownItem } from "@/components/common/Dropdown";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Settings, LogOut, User } from "lucide-react";
 import Link from "next/link";
+import { authApi } from "@/services/api";
 
 export default function Header() {
   const { toggle } = useSidebar();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const storedName = localStorage.getItem("user-name");
+    const email = localStorage.getItem("user-email") || "";
+    setUserName(storedName || email.split("@")[0] || "Utilisateur");
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,11 +29,17 @@ export default function Header() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("sb-access-token");
+    localStorage.removeItem("user-email");
+    router.push("/login");
+  };
+
   const userMenuTrigger = (
     <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 rounded-lg px-3 py-2 transition-colors">
-      <Avatar fallback="Pierre Akoa" size="sm" />
+      <Avatar fallback={userName || "U"} size="sm" />
       <span className="hidden md:inline text-sm font-medium text-gray-700">
-        Pierre Akoa
+        {userName || "Utilisateur"}
       </span>
       <ChevronDown className="hidden md:block w-4 h-4 text-gray-400" />
     </div>
@@ -34,7 +48,6 @@ export default function Header() {
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
       <div className="flex items-center justify-between h-16 px-4 md:px-6">
-        {/* Left section */}
         <div className="flex items-center gap-4">
           <button
             onClick={toggle}
@@ -48,7 +61,6 @@ export default function Header() {
           </h2>
         </div>
 
-        {/* Search bar */}
         <form onSubmit={handleSearch} className="flex-1 max-w-md mx-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -62,9 +74,7 @@ export default function Header() {
           </div>
         </form>
 
-        {/* Right section */}
         <div className="flex items-center gap-3">
-          {/* Notifications */}
           <button className="relative p-2 rounded-full hover:bg-gray-200 transition-colors">
             <Link href="/dashboard/notifications" className="relative">
               <Bell className="w-5 h-5 text-gray-500" />
@@ -72,7 +82,6 @@ export default function Header() {
             <span className="absolute top-1 right-1 w-2 h-2 bg-[#F49600] rounded-full"></span>
           </button>
 
-          {/* User menu */}
           <Dropdown trigger={userMenuTrigger} align="right">
             <DropdownItem onClick={() => router.push("/dashboard/profile")}>
               <div className="flex items-center gap-2">
@@ -87,7 +96,7 @@ export default function Header() {
               </div>
             </DropdownItem>
             <div className="border-t border-gray-100 my-1"></div>
-            <DropdownItem onClick={() => console.log("ut")}>
+            <DropdownItem onClick={handleLogout}>
               <div className="flex items-center gap-2 text-red-600">
                 <LogOut className="w-4 h-4" />
                 <span>Déconnexion</span>

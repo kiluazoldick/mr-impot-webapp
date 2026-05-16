@@ -1,54 +1,31 @@
-# Mr Impôt
+# Mr Impot - Web App
 
-Plateforme de ressources juridiques et fiscales.
+Application utilisateur de la plateforme Mr Impot.
 
-## À propos
+## 🚀 Déploiement
 
-Mr Impôt est une application web qui centralise l'accès aux documents juridiques, vidéos éducatives et ressources fiscales. Une solution moderne et intuitive pour les professionnels et particuliers.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
 
-## Fonctionnalités
-
-- 📄 **Bibliothèque de documents** : Accédez à des milliers de documents juridiques classés par catégorie
-- 🎥 **Vidéos éducatives** : Apprenez à votre rythme avec des contenus vidéo
-- 🔍 **Recherche avancée** : Trouvez rapidement ce que vous cherchez
-- 👤 **Espace personnel** : Gérez vos favoris et votre historique
-- 📱 **Responsive** : Utilisable sur tous vos appareils
-
-## Technologies
-
-- Next.js
-- TypeScript
-- Tailwind CSS
-- Lucide React
-
-## Démarrage rapide
+## 🔧 Installation
 
 ```bash
-# Installer les dépendances
+git clone https://github.com/kiluazoldick/mr-impot-webapp.git
+cd mr-impot-webapp
 npm install
-
-# Lancer le serveur de développement
+cp .env.example .env.local
 npm run dev
+📦 Stack
+Next.js 16
+
+Supabase (Auth + Storage)
+
+Tailwind CSS
+
+react-hot-toast
+
+🌍 Variables d'environnement
+Variable	Description
+NEXT_PUBLIC_API_URL	URL du backend API
+NEXT_PUBLIC_SUPABASE_URL	URL Supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY	Clé publique Supabase
 ```
-
-Ouvrez [http://localhost:3000](http://localhost:3000) pour voir l'application.
-
-## Structure du projet
-
-```
-webapp/
-├── app/           # Pages et layouts
-├── components/    # Composants réutilisables
-├── hooks/         # Hooks personnalisés
-├── types/         # Définitions TypeScript
-├── utils/         # Fonctions utilitaires
-└── public/        # Assets statiques
-```
-
-## Équipe
-
-Projet développé dans le cadre de Mr Impôt.
-
-## Licence
-
-Tous droits réservés.

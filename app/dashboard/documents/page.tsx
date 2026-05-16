@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -12,11 +12,32 @@ import {
   Eye,
   Heart,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import Card from "@/components/common/Card";
 import Button from "@/components/common/Button";
 import Badge from "@/components/common/Badge";
-import { documents, categories } from "@/data/mockData";
+import { publicApi } from "@/services/api";
+
+interface DocItem {
+  id: string;
+  title_fr: string;
+  title_en: string;
+  description_fr?: string;
+  description_en?: string;
+  category?: { id: string; name_fr: string; name_en: string; slug: string };
+  file_path?: string;
+  created_at: string;
+  view_count?: number;
+  download_count?: number;
+}
+
+interface CatItem {
+  id: string;
+  name_fr: string;
+  name_en: string;
+  slug: string;
+}
 
 function DocumentsContent() {
   const searchParams = useSearchParams();
@@ -24,35 +45,57 @@ function DocumentsContent() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(categoryParam || "");
-  const [selectedFormat, setSelectedFormat] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [documents, setDocuments] = useState<DocItem[]>([]);
+  const [categories, setCategories] = useState<CatItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [catsRes, docsRes] = await Promise.all([
+          publicApi.getCategories(),
+          publicApi.getDocuments({ page: String(page), limit: "20" }),
+        ]);
+        const catsList = Array.isArray(catsRes) ? catsRes : catsRes?.data || [];
+        setCategories(catsList.filter((c: CatItem) => !c.parent_id));
+        setDocuments(docsRes?.data || []);
+        setTotalPages(docsRes?.totalPages || 1);
+        setTotal(docsRes?.total || 0);
+      } catch (error) {
+        console.error("Erreur chargement documents:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [page]);
 
   const filteredDocuments = documents.filter((doc) => {
     const matchesSearch =
       searchQuery === "" ||
-      doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (doc.title_fr || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (doc.title_en || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (doc.description_fr || "")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
 
     const matchesCategory =
-      selectedCategory === "" ||
-      doc.category.name.toLowerCase().replace(/\s/g, "-") === selectedCategory;
+      selectedCategory === "" || doc.category?.slug === selectedCategory;
 
-    const matchesFormat =
-      selectedFormat === "" || doc.format === selectedFormat;
-
-    return matchesSearch && matchesCategory && matchesFormat;
+    return matchesSearch && matchesCategory;
   });
-
-  const formats = ["PDF", "DOC", "DOCX", "TXT"];
 
   const clearFilters = () => {
     setSelectedCategory("");
-    setSelectedFormat("");
     setSearchQuery("");
   };
 
-  const hasActiveFilters =
-    selectedCategory !== "" || selectedFormat !== "" || searchQuery !== "";
+  const hasActiveFilters = selectedCategory !== "" || searchQuery !== "";
 
   return (
     <div className="space-y-6">
@@ -81,15 +124,13 @@ function DocumentsContent() {
             onClick={() => setShowFilters(!showFilters)}
             className="sm:hidden"
           >
-            <Filter className="w-4 h-4 mr-2" />
-            Filtres
+            <Filter className="w-4 h-4 mr-2" /> Filtres
           </Button>
         </div>
 
         <div className="hidden sm:flex flex-wrap items-center gap-3">
           <span className="text-sm text-gray-500 flex items-center gap-1">
-            <Filter className="w-4 h-4" />
-            Filtres :
+            <Filter className="w-4 h-4" /> Filtres :
           </span>
           <div className="relative">
             <select
@@ -100,22 +141,7 @@ function DocumentsContent() {
               <option value="">Toutes les catégories</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.slug}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
-          <div className="relative">
-            <select
-              value={selectedFormat}
-              onChange={(e) => setSelectedFormat(e.target.value)}
-              className="appearance-none pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:border-[#3DA7E3] cursor-pointer"
-            >
-              <option value="">Tous les formats</option>
-              {formats.map((format) => (
-                <option key={format} value={format}>
-                  {format}
+                  {cat.name_fr}
                 </option>
               ))}
             </select>
@@ -126,62 +152,10 @@ function DocumentsContent() {
               onClick={clearFilters}
               className="text-sm text-[#F49600] hover:underline flex items-center gap-1"
             >
-              <X className="w-3 h-3" />
-              Effacer les filtres
+              <X className="w-3 h-3" /> Effacer les filtres
             </button>
           )}
         </div>
-
-        {showFilters && (
-          <Card className="border border-gray-200 p-4 sm:hidden">
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-1 block">
-                  Catégorie
-                </label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-black"
-                >
-                  <option value="">Toutes les catégories</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.slug}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-1 block">
-                  Format
-                </label>
-                <select
-                  value={selectedFormat}
-                  onChange={(e) => setSelectedFormat(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-black"
-                >
-                  <option value="">Tous les formats</option>
-                  {formats.map((format) => (
-                    <option key={format} value={format}>
-                      {format}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {hasActiveFilters && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="w-full"
-                >
-                  Effacer les filtres
-                </Button>
-              )}
-            </div>
-          </Card>
-        )}
       </div>
 
       <div className="space-y-4">
@@ -191,7 +165,19 @@ function DocumentsContent() {
           </p>
         </div>
 
-        {filteredDocuments.length === 0 ? (
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="border border-gray-200 rounded-xl p-4 animate-pulse"
+              >
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+                <div className="h-3 bg-gray-200 rounded w-full" />
+              </div>
+            ))}
+          </div>
+        ) : filteredDocuments.length === 0 ? (
           <Card className="border border-gray-200 text-center py-12">
             <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <h3 className="text-lg font-medium text-gray-900 mb-1">
@@ -231,25 +217,25 @@ function DocumentsContent() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-900 group-hover:text-[#3DA7E3] transition-colors">
-                          {doc.title}
+                          {doc.title_fr}
                         </h3>
                         <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">
-                          {doc.description}
+                          {doc.description_fr || ""}
                         </p>
                         <div className="flex flex-wrap items-center gap-3 mt-2">
                           <Badge variant="default" size="sm">
-                            {doc.category.name}
+                            {doc.category?.name_fr || "-"}
                           </Badge>
                           <Badge variant="default" size="sm">
-                            {doc.format}
+                            PDF
                           </Badge>
                           <span className="text-xs text-gray-400 flex items-center gap-1">
-                            <Eye className="w-3 h-3" />
-                            {doc.views} vues
+                            <Eye className="w-3 h-3" /> {doc.view_count || 0}{" "}
+                            vues
                           </span>
                           <span className="text-xs text-gray-400 flex items-center gap-1">
-                            <Download className="w-3 h-3" />
-                            {doc.downloads} téléchargements
+                            <Download className="w-3 h-3" />{" "}
+                            {doc.download_count || 0} téléchargements
                           </span>
                         </div>
                       </div>
@@ -258,15 +244,13 @@ function DocumentsContent() {
                       <button
                         onClick={(e) => {
                           e.preventDefault();
-                          console.log("Ajouter aux favoris", doc.id);
                         }}
                         className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                       >
                         <Heart className="w-4 h-4 text-gray-400 hover:text-[#F49600]" />
                       </button>
                       <Button variant="outline" size="sm">
-                        <Download className="w-4 h-4 mr-1" />
-                        Télécharger
+                        <Download className="w-4 h-4 mr-1" /> Télécharger
                       </Button>
                     </div>
                   </div>
@@ -285,7 +269,7 @@ export default function DocumentsPage() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#3DA7E3]"></div>
+          <Loader2 className="w-8 h-8 animate-spin text-[#3DA7E3]" />
         </div>
       }
     >
