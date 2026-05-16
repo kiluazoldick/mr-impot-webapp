@@ -42,7 +42,7 @@ export default function VideoDetailPage() {
     const loadVideo = async () => {
       setIsLoading(true);
       try {
-        const vid = await publicApi.getVideo(videoId);
+        const vid: any = await publicApi.getVideo(videoId);
         setVideo(vid);
         if (vid.file_path) {
           const { data: urlData } = await supabase.storage

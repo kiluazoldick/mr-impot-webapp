@@ -35,7 +35,7 @@ export default function DocumentDetailPage() {
     const loadDocument = async () => {
       setIsLoading(true);
       try {
-        const doc = await publicApi.getDocument(documentId);
+        const doc: any = await publicApi.getDocument(documentId);
         setDocument(doc);
 
         if (doc.file_path) {
