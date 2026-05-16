@@ -37,6 +37,8 @@ interface CatItem {
   name_fr: string;
   name_en: string;
   slug: string;
+  parent_id: string | null;
+  subcategories?: CatItem[];
 }
 
 function DocumentsContent() {
