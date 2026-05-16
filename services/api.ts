@@ -6,7 +6,7 @@ interface RequestOptions {
   isFormData?: boolean;
 }
 
-async function request<T>(
+async function request<T = any>(
   endpoint: string,
   options?: RequestInit & RequestOptions,
 ): Promise<T> {

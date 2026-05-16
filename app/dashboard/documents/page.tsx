@@ -61,7 +61,9 @@ function DocumentsContent() {
           publicApi.getCategories(),
           publicApi.getDocuments({ page: String(page), limit: "20" }),
         ]);
-        const catsList = Array.isArray(catsRes) ? catsRes : catsRes?.data || [];
+        const catsList = Array.isArray(catsRes)
+          ? catsRes
+          : (catsRes as any)?.data || [];
         setCategories(catsList.filter((c: CatItem) => !c.parent_id));
         setDocuments(docsRes?.data || []);
         setTotalPages(docsRes?.totalPages || 1);
