@@ -56,7 +56,7 @@ export default function DocumentDetailPage() {
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
-      const result = await publicApi.downloadDocument(documentId);
+      const result: any = await publicApi.downloadDocument(documentId);
       if (result?.url) window.open(result.url, "_blank");
     } catch (error) {
       console.error("Erreur téléchargement:", error);
