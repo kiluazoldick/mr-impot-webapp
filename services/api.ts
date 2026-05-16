@@ -20,7 +20,7 @@ async function request<T = any>(
     headers["Content-Type"] = "application/json";
   }
 
-  // Ajouter le token depuis localStorage
+  // Ajouter le token depuis localStorage (pour les routes protégées)
   const token = localStorage.getItem("sb-access-token");
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -29,7 +29,6 @@ async function request<T = any>(
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...fetchOptions,
     headers,
-    credentials: "include",
   });
 
   if (!response.ok) {
