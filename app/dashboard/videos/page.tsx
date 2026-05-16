@@ -34,6 +34,7 @@ interface CatItem {
   id: string;
   name_fr: string;
   name_en: string;
+  parent_id: string | null;
 }
 
 function VideosContent() {
