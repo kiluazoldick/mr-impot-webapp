@@ -46,7 +46,9 @@ function DocumentsContent() {
   const categoryParam = searchParams.get("category");
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(categoryParam || "");
+  const [selectedCategorySlug, setSelectedCategorySlug] = useState(
+    categoryParam || "",
+  );
   const [showFilters, setShowFilters] = useState(false);
   const [documents, setDocuments] = useState<DocItem[]>([]);
   const [categories, setCategories] = useState<CatItem[]>([]);
@@ -61,15 +63,21 @@ function DocumentsContent() {
       try {
         const [catsRes, docsRes] = await Promise.all([
           publicApi.getCategories(),
-          publicApi.getDocuments({ page: String(page), limit: "20" }),
+          publicApi.getDocuments({
+            page: String(page),
+            limit: "20",
+            ...(selectedCategorySlug
+              ? { category_slug: selectedCategorySlug }
+              : {}),
+          }),
         ]);
         const catsList = Array.isArray(catsRes)
           ? catsRes
           : (catsRes as any)?.data || [];
         setCategories(catsList.filter((c: CatItem) => !c.parent_id));
-        setDocuments(docsRes?.data || []);
-        setTotalPages(docsRes?.totalPages || 1);
-        setTotal(docsRes?.total || 0);
+        setDocuments((docsRes as any)?.data || []);
+        setTotalPages((docsRes as any)?.totalPages || 1);
+        setTotal((docsRes as any)?.total || 0);
       } catch (error) {
         console.error("Erreur chargement documents:", error);
       } finally {
@@ -77,29 +85,25 @@ function DocumentsContent() {
       }
     };
     fetchData();
-  }, [page]);
+  }, [page, selectedCategorySlug]);
 
+  // Filtrer par recherche (côté client)
   const filteredDocuments = documents.filter((doc) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      (doc.title_fr || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (doc.title_en || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (doc.description_fr || "")
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-
-    const matchesCategory =
-      selectedCategory === "" || doc.category?.slug === selectedCategory;
-
-    return matchesSearch && matchesCategory;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (doc.title_fr || "").toLowerCase().includes(q) ||
+      (doc.title_en || "").toLowerCase().includes(q) ||
+      (doc.description_fr || "").toLowerCase().includes(q)
+    );
   });
 
   const clearFilters = () => {
-    setSelectedCategory("");
+    setSelectedCategorySlug("");
     setSearchQuery("");
   };
 
-  const hasActiveFilters = selectedCategory !== "" || searchQuery !== "";
+  const hasActiveFilters = selectedCategorySlug !== "" || searchQuery !== "";
 
   return (
     <div className="space-y-6">
@@ -138,8 +142,8 @@ function DocumentsContent() {
           </span>
           <div className="relative">
             <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              value={selectedCategorySlug}
+              onChange={(e) => setSelectedCategorySlug(e.target.value)}
               className="appearance-none pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:border-[#3DA7E3] cursor-pointer"
             >
               <option value="">Toutes les catégories</option>
