@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Settings, LogOut, User } from "lucide-react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 export default function Header() {
   const { toggle } = useSidebar();
@@ -29,9 +30,8 @@ export default function Header() {
   };
 
   const handleLogout = async () => {
-    localStorage.removeItem("sb-access-token");
-    localStorage.removeItem("user-email");
-    localStorage.removeItem("user-name");
+    await supabase.auth.signOut();
+    localStorage.clear();
     router.push("/login");
   };
 

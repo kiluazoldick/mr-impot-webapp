@@ -17,6 +17,7 @@ import { useSidebar } from "@/hooks/useSidebar";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 const navigation = [
   { name: "Accueil", href: "/dashboard", icon: Home },
@@ -43,14 +44,12 @@ export default function Sidebar() {
     if (isMobile) close();
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("sb-access-token");
-    localStorage.removeItem("user-email");
-    localStorage.removeItem("user-name");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    localStorage.clear();
     router.push("/login");
   };
 
-  // Vérifier si le lien est actif (exact match pour Accueil, startsWith pour les autres)
   const isActive = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard";
     return pathname === href || pathname.startsWith(href + "/");
@@ -64,7 +63,6 @@ export default function Sidebar() {
           onClick={close}
         />
       )}
-
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
@@ -75,7 +73,6 @@ export default function Sidebar() {
               <span className="text-xl font-bold text-[#3DA7E3]">Mr Impôt</span>
             </div>
           </div>
-
           <nav className="flex-1 px-4 py-6 overflow-y-auto">
             <div className="space-y-1">
               {navigation.map((item) => {
@@ -85,11 +82,7 @@ export default function Sidebar() {
                     key={item.name}
                     href={item.href}
                     onClick={handleClose}
-                    className={`flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 group ${
-                      active
-                        ? "bg-[#3DA7E3] text-white shadow-sm"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-[#3DA7E3]"
-                    }`}
+                    className={`flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 group ${active ? "bg-[#3DA7E3] text-white shadow-sm" : "text-gray-600 hover:bg-gray-100 hover:text-[#3DA7E3]"}`}
                   >
                     <item.icon
                       className={`w-5 h-5 mr-3 ${active ? "text-white" : "text-gray-400 group-hover:text-[#3DA7E3]"}`}
@@ -100,7 +93,6 @@ export default function Sidebar() {
               })}
             </div>
           </nav>
-
           <div className="p-4 border-t border-gray-200">
             <button
               onClick={handleLogout}

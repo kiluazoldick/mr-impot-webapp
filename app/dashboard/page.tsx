@@ -60,25 +60,10 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Récupérer le profil utilisateur pour avoir le vrai nom
-        let name = "";
-        try {
-          const me = await authApi.me();
-          if (me?.profile) {
-            name =
-              [me.profile.first_name, me.profile.last_name]
-                .filter(Boolean)
-                .join(" ") ||
-              me.profile.email?.split("@")[0] ||
-              "Utilisateur";
-          }
-        } catch {
-          // Fallback localStorage
-          const storedName = localStorage.getItem("user-name");
-          const email = localStorage.getItem("user-email") || "";
-          name = storedName || email.split("@")[0] || "Utilisateur";
-        }
-        setUserName(name);
+        // Récupérer le nom depuis localStorage (stocké par le layout)
+        const storedName = localStorage.getItem("user-name");
+        const email = localStorage.getItem("user-email") || "";
+        setUserName(storedName || email.split("@")[0] || "Utilisateur");
 
         // Récupérer catégories, documents, vidéos
         const [catsRes, docsRes, vidsRes] = await Promise.all([
