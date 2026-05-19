@@ -8,7 +8,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Settings, LogOut, User } from "lucide-react";
 import Link from "next/link";
-import { authApi } from "@/services/api";
 
 export default function Header() {
   const { toggle } = useSidebar();
@@ -29,9 +28,10 @@ export default function Header() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem("sb-access-token");
     localStorage.removeItem("user-email");
+    localStorage.removeItem("user-name");
     router.push("/login");
   };
 

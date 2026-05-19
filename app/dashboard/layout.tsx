@@ -15,12 +15,10 @@ export default function DashboardLayout({
   const router = useRouter();
   const [isAuth, setIsAuth] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [userName, setUserName] = useState("");
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Vérifier la session Supabase (marche pour Google ET email)
         const {
           data: { session },
         } = await supabase.auth.getSession();
@@ -29,7 +27,7 @@ export default function DashboardLayout({
           localStorage.setItem("sb-access-token", session.access_token);
           localStorage.setItem("user-email", session.user.email || "");
 
-          // Récupérer le profil depuis Supabase directement
+          // Récupérer le profil depuis Supabase
           const { data: profile } = await supabase
             .from("profiles")
             .select("first_name, last_name")
@@ -44,7 +42,11 @@ export default function DashboardLayout({
               session.user.email?.split("@")[0] ||
               "Utilisateur";
             localStorage.setItem("user-name", name);
-            setUserName(name);
+          } else {
+            localStorage.setItem(
+              "user-name",
+              session.user.email?.split("@")[0] || "Utilisateur",
+            );
           }
 
           setIsAuth(true);
@@ -52,7 +54,7 @@ export default function DashboardLayout({
           return;
         }
 
-        // Fallback : vérifier le token localStorage (email/password)
+        // Fallback : token localStorage
         const token = localStorage.getItem("sb-access-token");
         if (!token) {
           router.replace("/login");

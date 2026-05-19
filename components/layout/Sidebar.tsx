@@ -8,6 +8,7 @@ import {
   FolderTree,
   FileText,
   Video,
+  Heart,
   User,
   Settings,
   LogOut,
@@ -23,6 +24,7 @@ const navigation = [
   { name: "Documents", href: "/dashboard/documents", icon: FileText },
   { name: "Catégories", href: "/dashboard/categories", icon: FolderTree },
   { name: "Vidéos", href: "/dashboard/videos", icon: Video },
+  { name: "Favoris", href: "/dashboard/favorites", icon: Heart },
   { name: "Mon compte", href: "/dashboard/profile", icon: User },
   { name: "Paramètres", href: "/dashboard/settings", icon: Settings },
 ];
@@ -34,15 +36,11 @@ export default function Sidebar() {
   const isMobile = useMediaQuery("(max-width: 1024px)");
 
   useEffect(() => {
-    if (isMobile && isOpen) {
-      close();
-    }
+    if (isMobile && isOpen) close();
   }, [pathname, isMobile]);
 
   const handleClose = () => {
-    if (isMobile) {
-      close();
-    }
+    if (isMobile) close();
   };
 
   const handleLogout = () => {
@@ -50,6 +48,12 @@ export default function Sidebar() {
     localStorage.removeItem("user-email");
     localStorage.removeItem("user-name");
     router.push("/login");
+  };
+
+  // Vérifier si le lien est actif (exact match pour Accueil, startsWith pour les autres)
+  const isActive = (href: string) => {
+    if (href === "/dashboard") return pathname === "/dashboard";
+    return pathname === href || pathname.startsWith(href + "/");
   };
 
   return (
@@ -62,9 +66,7 @@ export default function Sidebar() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-center h-16 border-b border-gray-200">
@@ -77,22 +79,20 @@ export default function Sidebar() {
           <nav className="flex-1 px-4 py-6 overflow-y-auto">
             <div className="space-y-1">
               {navigation.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  pathname.startsWith(item.href + "/");
+                const active = isActive(item.href);
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
                     onClick={handleClose}
                     className={`flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 group ${
-                      isActive
+                      active
                         ? "bg-[#3DA7E3] text-white shadow-sm"
                         : "text-gray-600 hover:bg-gray-100 hover:text-[#3DA7E3]"
                     }`}
                   >
                     <item.icon
-                      className={`w-5 h-5 mr-3 ${isActive ? "text-white" : "text-gray-400 group-hover:text-[#3DA7E3]"}`}
+                      className={`w-5 h-5 mr-3 ${active ? "text-white" : "text-gray-400 group-hover:text-[#3DA7E3]"}`}
                     />
                     <span className="font-medium text-sm">{item.name}</span>
                   </Link>
@@ -106,8 +106,7 @@ export default function Sidebar() {
               onClick={handleLogout}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 hover:text-red-600 transition-colors"
             >
-              <LogOut className="w-4 h-4 mr-3" />
-              Déconnexion
+              <LogOut className="w-4 h-4 mr-3" /> Déconnexion
             </button>
             <div className="mt-4 text-xs text-center text-gray-400">
               Version 1.0.0
