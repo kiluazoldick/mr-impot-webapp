@@ -7,10 +7,8 @@ import {
   ArrowLeft,
   Download,
   Heart,
-  Share2,
   Eye,
   Calendar,
-  User,
   FileText,
   BookOpen,
   Loader2,
@@ -20,6 +18,7 @@ import Button from "@/components/common/Button";
 import Badge from "@/components/common/Badge";
 import { publicApi } from "@/services/api";
 import { supabase } from "@/lib/supabase";
+import { addToFavorites, removeFavorite, isFavorite } from "@/utils/favorites";
 
 export default function DocumentDetailPage() {
   const params = useParams();
@@ -30,6 +29,7 @@ export default function DocumentDetailPage() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isFav, setIsFav] = useState(false);
 
   useEffect(() => {
     const loadDocument = async () => {
@@ -37,6 +37,7 @@ export default function DocumentDetailPage() {
       try {
         const doc: any = await publicApi.getDocument(documentId);
         setDocument(doc);
+        setIsFav(isFavorite(documentId));
 
         if (doc.file_path) {
           const { data: urlData } = await supabase.storage
@@ -62,6 +63,26 @@ export default function DocumentDetailPage() {
       console.error("Erreur téléchargement:", error);
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleToggleFavorite = () => {
+    if (!document) return;
+    if (isFav) {
+      removeFavorite(documentId);
+      setIsFav(false);
+    } else {
+      addToFavorites({
+        id: document.id,
+        type: "document",
+        title_fr: document.title_fr || "",
+        description_fr: document.description_fr || "",
+        category: document.category?.name_fr || "",
+        view_count: document.view_count || 0,
+        download_count: document.download_count || 0,
+        created_at: document.created_at || "",
+      });
+      setIsFav(true);
     }
   };
 
@@ -115,16 +136,10 @@ export default function DocumentDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => {}}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-black/60"
+            onClick={handleToggleFavorite}
+            className={`p-2 rounded-lg transition-colors ${isFav ? "bg-[#F49600]/10 text-[#F49600]" : "hover:bg-gray-100 text-black/60"}`}
           >
-            <Heart className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => {}}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-black/60"
-          >
-            <Share2 className="w-5 h-5" />
+            <Heart className={`w-5 h-5 ${isFav ? "fill-[#F49600]" : ""}`} />
           </button>
         </div>
       </div>
@@ -218,6 +233,16 @@ export default function DocumentDetailPage() {
                 isLoading={isDownloading}
               >
                 <Download className="w-4 h-4 mr-2" /> Télécharger le document
+              </Button>
+              <Button
+                variant="outline"
+                className={`w-full ${isFav ? "text-[#F49600] border-[#F49600]" : ""}`}
+                onClick={handleToggleFavorite}
+              >
+                <Heart
+                  className={`w-4 h-4 mr-2 ${isFav ? "fill-[#F49600]" : ""}`}
+                />
+                {isFav ? "Retirer des favoris" : "Ajouter aux favoris"}
               </Button>
               <Link href="/dashboard/documents">
                 <Button variant="outline" className="w-full">
