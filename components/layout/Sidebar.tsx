@@ -6,6 +6,7 @@ import {
   Home,
   Search,
   FolderTree,
+  FileText,
   Video,
   User,
   Settings,
@@ -14,10 +15,12 @@ import {
 import { useSidebar } from "@/hooks/useSidebar";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 const navigation = [
   { name: "Accueil", href: "/dashboard", icon: Home },
   { name: "Recherche", href: "/dashboard/search", icon: Search },
+  { name: "Documents", href: "/dashboard/documents", icon: FileText },
   { name: "Catégories", href: "/dashboard/categories", icon: FolderTree },
   { name: "Vidéos", href: "/dashboard/videos", icon: Video },
   { name: "Mon compte", href: "/dashboard/profile", icon: User },
@@ -26,6 +29,7 @@ const navigation = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { isOpen, close } = useSidebar();
   const isMobile = useMediaQuery("(max-width: 1024px)");
 
@@ -41,9 +45,15 @@ export default function Sidebar() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("sb-access-token");
+    localStorage.removeItem("user-email");
+    localStorage.removeItem("user-name");
+    router.push("/login");
+  };
+
   return (
     <>
-      {/* Mobile backdrop */}
       {isOpen && isMobile && (
         <div
           className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
@@ -51,55 +61,38 @@ export default function Sidebar() {
         />
       )}
 
-      {/* Sidebar */}
       <aside
-        className={`
-          fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto
-          ${isOpen ? "translate-x-0" : "-translate-x-full"}
-        `}
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
         <div className="flex flex-col h-full">
-          {/* Logo */}
           <div className="flex items-center justify-center h-16 border-b border-gray-200">
             <div className="flex items-center space-x-2">
-              <img
-                src="/logo.png"
-                alt="Mr Impôt"
-                className="h-8 w-auto"
-                onError={(e) => {
-                  e.currentTarget.src =
-                    "https://via.placeholder.com/32x32?text=MI";
-                }}
-              />
+              <img src="/logo.png" alt="Mr Impôt" className="h-8 w-auto" />
               <span className="text-xl font-bold text-[#3DA7E3]">Mr Impôt</span>
             </div>
           </div>
 
-          {/* Navigation principale */}
           <nav className="flex-1 px-4 py-6 overflow-y-auto">
             <div className="space-y-1">
               {navigation.map((item) => {
-                const isActive = pathname === item.href;
+                const isActive =
+                  pathname === item.href ||
+                  pathname.startsWith(item.href + "/");
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
                     onClick={handleClose}
-                    className={`
-                      flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 group
-                      ${
-                        isActive
-                          ? "bg-[#3DA7E3] text-white shadow-sm"
-                          : "text-gray-600 hover:bg-gray-100 hover:text-[#3DA7E3]"
-                      }
-                    `}
+                    className={`flex items-center px-4 py-2.5 rounded-lg transition-all duration-200 group ${
+                      isActive
+                        ? "bg-[#3DA7E3] text-white shadow-sm"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-[#3DA7E3]"
+                    }`}
                   >
                     <item.icon
-                      className={`w-5 h-5 mr-3 ${
-                        isActive
-                          ? "text-white"
-                          : "text-gray-400 group-hover:text-[#3DA7E3]"
-                      }`}
+                      className={`w-5 h-5 mr-3 ${isActive ? "text-white" : "text-gray-400 group-hover:text-[#3DA7E3]"}`}
                     />
                     <span className="font-medium text-sm">{item.name}</span>
                   </Link>
@@ -108,19 +101,14 @@ export default function Sidebar() {
             </div>
           </nav>
 
-          {/* Footer */}
           <div className="p-4 border-t border-gray-200">
-            <Link href="/">
-              <button
-                onClick={() => {
-                  console.log("Logout");
-                }}
-                className="flex items-center w-full px-4 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 hover:text-red-600 transition-colors"
-              >
-                <LogOut className="w-4 h-4 mr-3" />
-                Déconnexion
-              </button>
-            </Link>
+            <button
+              onClick={handleLogout}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 hover:text-red-600 transition-colors"
+            >
+              <LogOut className="w-4 h-4 mr-3" />
+              Déconnexion
+            </button>
             <div className="mt-4 text-xs text-center text-gray-400">
               Version 1.0.0
             </div>

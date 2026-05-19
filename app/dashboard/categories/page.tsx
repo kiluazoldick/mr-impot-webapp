@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   FolderTree,
   FileText,
-  Video,
   ChevronRight,
   Eye,
   Download,
@@ -55,7 +54,6 @@ function CategoriesContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
-  // Charger les catégories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -79,13 +77,18 @@ function CategoriesContent() {
     fetchCategories();
   }, []);
 
-  // Charger les documents d'une catégorie
+  // Trouver la catégorie sélectionnée (peut être une principale ou une sous-catégorie)
   useEffect(() => {
     if (categorySlug) {
-      const category = categories.find((cat) => cat.slug === categorySlug);
-      if (category) {
-        setSelectedCategory(category);
-        loadCategoryDocuments(category);
+      // Chercher dans toutes les catégories (y compris sous-catégories)
+      const allCategories = categories.flatMap((cat) => [
+        cat,
+        ...(cat.subcategories || []),
+      ]);
+      const found = allCategories.find((cat) => cat.slug === categorySlug);
+      if (found) {
+        setSelectedCategory(found);
+        loadCategoryDocuments(found);
       } else {
         setSelectedCategory(null);
         setCategoryDocs([]);
@@ -99,6 +102,7 @@ function CategoriesContent() {
   const loadCategoryDocuments = async (category: Category) => {
     setIsLoading(true);
     try {
+      // Chercher les documents de cette catégorie ET de ses sous-catégories
       const result = await publicApi.getDocuments({
         category_id: category.id,
         page: "1",
@@ -121,7 +125,6 @@ function CategoriesContent() {
     router.push("/dashboard/categories");
   };
 
-  // Si une catégorie est sélectionnée, afficher les documents
   if (selectedCategory) {
     return (
       <div className="space-y-6">
@@ -138,11 +141,12 @@ function CategoriesContent() {
             </h1>
             <p className="text-black/60 mt-1">
               {selectedCategory.description_fr ||
-                `Explorez tous les documents de la catégorie ${selectedCategory.name_fr}`}
+                `Explorez tous les documents de ${selectedCategory.name_fr}`}
             </p>
           </div>
         </div>
 
+        {/* Sous-catégories : si c'est une catégorie parente, afficher ses sous-catégories */}
         {selectedCategory.subcategories &&
           selectedCategory.subcategories.length > 0 && (
             <div>
@@ -156,7 +160,11 @@ function CategoriesContent() {
                     onClick={() =>
                       router.push(`/dashboard/categories?cat=${sub.slug}`)
                     }
-                    className="px-3 py-1.5 bg-gray-100 hover:bg-[#3DA7E3]/10 rounded-full text-sm text-black/70 hover:text-[#3DA7E3] transition-colors"
+                    className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                      categorySlug === sub.slug
+                        ? "bg-[#3DA7E3] text-white"
+                        : "bg-gray-100 hover:bg-[#3DA7E3]/10 text-black/70 hover:text-[#3DA7E3]"
+                    }`}
                   >
                     {sub.name_fr}
                   </button>
@@ -164,6 +172,24 @@ function CategoriesContent() {
               </div>
             </div>
           )}
+
+        {/* Si c'est une sous-catégorie, afficher un lien vers la catégorie parente */}
+        {selectedCategory.parent_id && (
+          <div>
+            <button
+              onClick={() => {
+                const parent = categories.find(
+                  (c) => c.id === selectedCategory.parent_id,
+                );
+                if (parent)
+                  router.push(`/dashboard/categories?cat=${parent.slug}`);
+              }}
+              className="text-sm text-[#3DA7E3] hover:underline"
+            >
+              ← Retour à la catégorie parente
+            </button>
+          </div>
+        )}
 
         <div>
           <div className="flex items-center justify-between mb-4">
@@ -252,7 +278,6 @@ function CategoriesContent() {
     );
   }
 
-  // Vue principale : toutes les catégories
   return (
     <div className="space-y-6">
       <div>

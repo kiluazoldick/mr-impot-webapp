@@ -60,10 +60,25 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Récupérer le nom depuis localStorage (stocké par le layout)
-        const storedName = localStorage.getItem("user-name");
-        const email = localStorage.getItem("user-email") || "";
-        setUserName(storedName || email.split("@")[0] || "Utilisateur");
+        // Récupérer le profil utilisateur pour avoir le vrai nom
+        let name = "";
+        try {
+          const me = await authApi.me();
+          if (me?.profile) {
+            name =
+              [me.profile.first_name, me.profile.last_name]
+                .filter(Boolean)
+                .join(" ") ||
+              me.profile.email?.split("@")[0] ||
+              "Utilisateur";
+          }
+        } catch {
+          // Fallback localStorage
+          const storedName = localStorage.getItem("user-name");
+          const email = localStorage.getItem("user-email") || "";
+          name = storedName || email.split("@")[0] || "Utilisateur";
+        }
+        setUserName(name);
 
         // Récupérer catégories, documents, vidéos
         const [catsRes, docsRes, vidsRes] = await Promise.all([
@@ -72,7 +87,9 @@ export default function DashboardPage() {
           publicApi.getVideos({ page: "1", limit: "3" }),
         ]);
 
-        const catsList = Array.isArray(catsRes) ? catsRes : catsRes?.data || [];
+        const catsList = Array.isArray(catsRes)
+          ? catsRes
+          : (catsRes as any)?.data || [];
         const mainCats = catsList.filter((c: CatItem) => !c.parent_id);
         const subCats = catsList.filter((c: CatItem) => c.parent_id);
         const catsWithSubs = mainCats.map((cat: CatItem) => ({
@@ -83,8 +100,8 @@ export default function DashboardPage() {
         }));
         setCategories(catsWithSubs);
 
-        setDocuments(docsRes?.data || []);
-        setVideos(vidsRes?.data || []);
+        setDocuments((docsRes as any)?.data || []);
+        setVideos((vidsRes as any)?.data || []);
       } catch (error) {
         console.error("Erreur chargement dashboard:", error);
       } finally {
